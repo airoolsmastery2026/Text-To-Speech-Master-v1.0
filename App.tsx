@@ -16,7 +16,9 @@ import {
   APP_CONFIG,
   UserApiKeys,
   TARGET_PLATFORMS,
-  TargetPlatform
+  TargetPlatform,
+  RegionalDialect,
+  REGIONS
 } from './types';
 import { generateSpeech, transcribeAudio, translateText, optimizeTextContent, OptimizationStyle } from './services/geminiService';
 import { generateGoogleSpeech, generateElevenLabsSpeech, addElevenLabsVoice, getElevenLabsVoices } from './services/externalTtsService';
@@ -56,7 +58,8 @@ import {
   Sparkles,
   PenTool,
   Clock,
-  MessageSquarePlus
+  MessageSquarePlus,
+  MapPin
 } from 'lucide-react';
 
 // Helper to get friendly error messages
@@ -198,7 +201,8 @@ const App: React.FC = () => {
   const [optimizationStyle, setOptimizationStyle] = useState<OptimizationStyle>('sales');
   const [selectedPlatformId, setSelectedPlatformId] = useState<string>('none');
   const [optimizationPrompt, setOptimizationPrompt] = useState<string>('');
-  
+  const [selectedDialect, setSelectedDialect] = useState<RegionalDialect>('north');
+
   // STT State
   const [sttFile, setSttFile] = useState<File | null>(null);
   const [sttFileBase64, setSttFileBase64] = useState<string | null>(null);
@@ -384,7 +388,7 @@ const App: React.FC = () => {
 
     try {
       const targetPlatform = TARGET_PLATFORMS.find(p => p.id === selectedPlatformId);
-      const optimized = await optimizeTextContent(text, optimizationStyle, targetPlatform, optimizationPrompt);
+      const optimized = await optimizeTextContent(text, optimizationStyle, targetPlatform, optimizationPrompt, selectedDialect);
       
       setText(optimized);
       
@@ -1293,10 +1297,27 @@ const App: React.FC = () => {
                                                 className="bg-transparent text-xs text-gray-300 focus:outline-none border-none p-1 cursor-pointer w-[120px]"
                                                 title="Chọn phong cách viết lại"
                                             >
+                                                <option value="emotional" className="bg-brand-blue font-bold text-yellow-400">🔥 Truyền cảm (Hot)</option>
                                                 <option value="sales" className="bg-brand-blue">Bán hàng / Review</option>
                                                 <option value="mc" className="bg-brand-blue">MC Chuyên nghiệp</option>
                                                 <option value="story" className="bg-brand-blue">Kể chuyện cảm xúc</option>
                                                 <option value="short" className="bg-brand-blue">Tóm tắt ngắn (TikTok)</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="flex items-center gap-1 border-l border-gray-600 pl-2">
+                                            <MapPin size={14} className="text-green-400" />
+                                            <select 
+                                                value={selectedDialect}
+                                                onChange={(e) => setSelectedDialect(e.target.value as RegionalDialect)}
+                                                className="bg-transparent text-xs text-gray-300 focus:outline-none border-none p-1 cursor-pointer w-[100px]"
+                                                title="Chuyển giọng vùng miền"
+                                            >
+                                                {REGIONS.map(r => (
+                                                    <option key={r.id} value={r.id} className="bg-brand-blue">
+                                                        {r.name}
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
 

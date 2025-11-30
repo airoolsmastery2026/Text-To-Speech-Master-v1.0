@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { TargetPlatform } from "../types";
+import { TargetPlatform, RegionalDialect } from "../types";
 
 // Helper to decode Base64 to ArrayBuffer
 function decodeBase64ToArrayBuffer(base64: string): ArrayBuffer {
@@ -155,13 +155,14 @@ export const translateText = async (text: string, targetLanguageName: string): P
   }
 };
 
-export type OptimizationStyle = 'sales' | 'mc' | 'story' | 'short';
+export type OptimizationStyle = 'sales' | 'mc' | 'story' | 'short' | 'emotional';
 
 export const optimizeTextContent = async (
     text: string, 
     style: OptimizationStyle,
     targetPlatform?: TargetPlatform,
-    customInstruction?: string // New parameter for user prompt
+    customInstruction?: string,
+    dialect: RegionalDialect = 'north' // New parameter for regional dialect
 ): Promise<string> => {
     const apiKey = process.env.API_KEY;
     if (!apiKey) throw new Error("API Key chưa được cấu hình.");
@@ -185,6 +186,19 @@ export const optimizeTextContent = async (
         case 'short':
              prompt = "Hãy tóm tắt và viết lại nội dung sau đây một cách ngắn gọn, súc tích, nhịp điệu nhanh.";
             break;
+        case 'emotional':
+             prompt = "Hãy viết lại nội dung này theo văn phong cực kỳ truyền cảm, sâu lắng, chạm đến trái tim. Hãy thêm các dấu chấm lửng (...) vào những chỗ cần ngắt nghỉ để tạo cảm xúc khi đọc. Sử dụng từ ngữ giàu hình ảnh và tâm trạng.";
+            break;
+    }
+
+    // Dialect Instructions
+    if (dialect !== 'north') {
+        prompt += `\n\nQUAN TRỌNG - CHUYỂN ĐỔI VÙNG MIỀN:`;
+        if (dialect === 'central') {
+            prompt += `\nHãy viết lại nội dung theo phương ngữ MIỀN TRUNG (Huế/Nghệ An). Hãy thay thế các từ phổ thông bằng từ địa phương tương ứng một cách tự nhiên nhất (Ví dụ: sao -> răng, đâu -> mô, kia -> tê, thế này -> rứa, cái này -> cái ni...). Giữ nguyên ý nghĩa nhưng làm cho nó đậm chất miền Trung.`;
+        } else if (dialect === 'south') {
+             prompt += `\nHãy viết lại nội dung theo phương ngữ MIỀN NAM (Sài Gòn/Miền Tây). Hãy thay thế các từ phổ thông bằng từ địa phương dân dã, thân thiện (Ví dụ: tôi -> tui, về -> dzìa, hả -> hén, này -> nè, không -> hổng, ổng/bả...). Giữ văn phong phóng khoáng, tự nhiên.`;
+        }
     }
 
     // Custom User Instructions
@@ -194,13 +208,8 @@ export const optimizeTextContent = async (
 
     // Platform/Duration Instructions
     if (targetPlatform && targetPlatform.id !== 'none' && targetPlatform.maxDurationSec > 0) {
-        // Average speaking rate: ~2.5 words per second (150 wpm)
-        // We slightly reduce it to safe limits for AI generation
         const safeWordCount = Math.floor(targetPlatform.maxDurationSec * 2.3);
-        
-        prompt += `\n\nQUAN TRỌNG: Nội dung này sẽ được sử dụng cho nền tảng ${targetPlatform.name}.`;
-        prompt += `\nHãy đảm bảo độ dài văn bản sau khi viết lại khoảng ${safeWordCount} từ (để khi đọc lên sẽ gói gọn trong ${targetPlatform.maxDurationSec} giây).`;
-        prompt += `\nTuyệt đối không viết quá dài dòng. Tập trung vào ý chính phù hợp với thời lượng.`;
+        prompt += `\n\nNội dung này dùng cho ${targetPlatform.name}. Hãy đảm bảo độ dài khoảng ${safeWordCount} từ (để đọc trong ${targetPlatform.maxDurationSec} giây).`;
     }
 
     prompt += `\n\nNội dung gốc:\n"${text}"\n\nYêu cầu: Chỉ trả về nội dung đã viết lại bằng Tiếng Việt, không thêm lời chào hay giải thích.`;

@@ -59,6 +59,22 @@ export const TARGET_PLATFORMS: TargetPlatform[] = [
   { id: 'podcast', name: 'Podcast / Kể chuyện', maxDurationSec: 300, suggestedSpeed: 0.9, description: 'Chậm rãi, truyền cảm' },
 ];
 
+// --- NEW: REGIONAL DIALECTS ---
+export type RegionalDialect = 'north' | 'central' | 'south';
+
+export interface RegionOption {
+    id: RegionalDialect;
+    name: string;
+    description: string;
+}
+
+export const REGIONS: RegionOption[] = [
+    { id: 'north', name: 'Miền Bắc (Chuẩn)', description: 'Giọng phổ thông, trang trọng' },
+    { id: 'central', name: 'Miền Trung (Huế/Nghệ)', description: 'Dùng từ địa phương: mô, tê, răng, rứa...' },
+    { id: 'south', name: 'Miền Nam (Sài Gòn)', description: 'Dùng từ bình dân: tui, hén, dzìa, nghen...' }
+];
+
+
 // Configuration Constants
 export const APP_CONFIG = {
   TTS_CHAR_LIMIT: 50000,
