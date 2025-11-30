@@ -86,56 +86,59 @@ const getFriendlyErrorMessage = (error: any): string => {
     return "Hệ thống gặp sự cố gián đoạn. Vui lòng thử lại sau ít phút.";
 };
 
+// --- LocalStorage Helpers (Defined outside component for performance) ---
+const loadSavedConfig = () => {
+  try {
+    const saved = localStorage.getItem('tts_config');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.warn("Could not load saved settings:", e);
+  }
+  return null;
+};
+
+const loadCustomVoices = (): VoiceOption[] => {
+    try {
+        const saved = localStorage.getItem('custom_voices');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+};
+
+const loadElevenLabsVoices = (): VoiceOption[] => {
+    try {
+        const saved = localStorage.getItem('elevenlabs_voices_cache');
+        if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return [];
+};
+
+const loadApiKeys = (): UserApiKeys => {
+    try {
+        const keys = localStorage.getItem('user_api_keys');
+        if (keys) return JSON.parse(keys);
+    } catch (e) {
+        console.error("Failed to load keys", e);
+    }
+    return {};
+};
+
+
 // Main Component
 const App: React.FC = () => {
   // App Mode State
   const [appMode, setAppMode] = useState<AppMode>('TTS');
 
-  // --- LocalStorage Logic for Persistence ---
-  const loadSavedConfig = () => {
-    try {
-      const saved = localStorage.getItem('tts_config');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn("Could not load saved settings:", e);
-    }
-    return null;
-  };
-
-  const loadCustomVoices = (): VoiceOption[] => {
-      try {
-          const saved = localStorage.getItem('custom_voices');
-          if (saved) return JSON.parse(saved);
-      } catch (e) {}
-      return [];
-  };
-
-  const loadElevenLabsVoices = (): VoiceOption[] => {
-      try {
-          const saved = localStorage.getItem('elevenlabs_voices_cache');
-          if (saved) return JSON.parse(saved);
-      } catch(e) {}
-      return [];
-  };
-
-  const savedConfig = loadSavedConfig();
-  
   // Lazy load API keys
-  const [apiKeys, setApiKeys] = useState<UserApiKeys>(() => {
-      try {
-          const keys = localStorage.getItem('user_api_keys');
-          if (keys) return JSON.parse(keys);
-      } catch (e) {
-          console.error("Failed to load keys", e);
-      }
-      return {};
-  });
+  const [apiKeys, setApiKeys] = useState<UserApiKeys>(() => loadApiKeys());
 
   const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [customVoices, setCustomVoices] = useState<VoiceOption[]>(loadCustomVoices());
-  const [fetchedElevenLabsVoices, setFetchedElevenLabsVoices] = useState<VoiceOption[]>(loadElevenLabsVoices());
+  
+  // Lazy load voices
+  const [customVoices, setCustomVoices] = useState<VoiceOption[]>(() => loadCustomVoices());
+  const [fetchedElevenLabsVoices, setFetchedElevenLabsVoices] = useState<VoiceOption[]>(() => loadElevenLabsVoices());
   const [isLoadingVoices, setIsLoadingVoices] = useState<boolean>(false);
 
   // Save custom voices & fetched voices
@@ -153,6 +156,7 @@ const App: React.FC = () => {
   const [text, setText] = useState<string>('');
   
   const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+    const savedConfig = loadSavedConfig();
     // Check if saved language exists in supported list
     if (savedConfig?.language && SUPPORTED_LANGUAGES.some(l => l.code === savedConfig.language)) {
       return savedConfig.language;
@@ -161,12 +165,13 @@ const App: React.FC = () => {
   });
 
   const [selectedVoice, setSelectedVoice] = useState<VoiceOption>(() => {
+    const savedConfig = loadSavedConfig();
     // Check if saved voice ID exists in current voice list (including custom)
     if (savedConfig?.voiceId) {
       // Check standard voices
       const foundVoice = ALL_VOICES.find(v => v.id === savedConfig.voiceId);
       if (foundVoice) return foundVoice;
-      // Check custom voices
+      // Check custom voices (need to load fresh to be sure, or rely on what we just loaded)
       const foundCustom = loadCustomVoices().find(v => v.id === savedConfig.voiceId);
       if (foundCustom) return foundCustom;
       // Check fetched elevenlabs voices
@@ -177,6 +182,7 @@ const App: React.FC = () => {
   });
 
   const [speed, setSpeed] = useState<number>(() => {
+    const savedConfig = loadSavedConfig();
     if (typeof savedConfig?.speed === 'number') {
       return savedConfig.speed;
     }
