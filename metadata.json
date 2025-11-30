@@ -1,0 +1,5 @@
+{
+  "name": "Text To Speech Master v1.0 ",
+  "description": "Ứng dụng chuyển đổi văn bản thành giọng nói (TTS) chuyên nghiệp sử dụng công nghệ Gemini AI. Hỗ trợ Tiếng Việt, tùy chỉnh giọng đọc, tốc độ và tải xuống file âm thanh chất lượng cao.",
+  "requestFramePermissions": []
+}
